@@ -4,21 +4,30 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 
 export default function TabLayout() {
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        tabBarStyle: { backgroundColor: 'black',position:'absolute',bottom:20,marginLeft:'22%',marginRight:'22%',borderRadius:30,paddingTop:3 }, 
+        tabBarShowLabel: false, 
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          headerShown:false,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: '',
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol size={28} name="house.fill" color={focused ? '#00bbf0' : '#dbd8e3'} />
+          ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
-          headerShown:false,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: '',
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol size={28} name="paperplane.fill" color={focused ? '#00bbf0' : '#dbd8e3'} />
+          ),
         }}
       />
     </Tabs>
