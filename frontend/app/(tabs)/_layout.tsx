@@ -6,27 +6,47 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: { backgroundColor: 'black',position:'absolute',bottom:20,marginLeft:'22%',marginRight:'22%',borderRadius:30,paddingTop:3 }, 
-        tabBarShowLabel: false, 
+        tabBarStyle: {
+          backgroundColor: 'black',
+          position: 'absolute',
+          bottom: 20,
+          marginLeft: '20%',
+          marginRight: '20%',
+          borderRadius: 40,
+          paddingTop: 3,
+        },
+        tabBarShowLabel: false,
       }}
     >
+      {/* Home Tab */}
       <Tabs.Screen
         name="index"
         options={{
-          title: '',
           headerShown: false,
-          tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name="house.fill" color={focused ? '#00bbf0' : '#dbd8e3'} />
+          tabBarIcon: ({ focused }) => (
+            <IconSymbol size={30} name="house.fill" color={focused ? '#00bbf0' : '#dbd8e3'} />
           ),
         }}
       />
+
+      {/* Explore Tab with Bar Chart Icon */}
       <Tabs.Screen
         name="explore"
         options={{
-          title: '',
           headerShown: false,
-          tabBarIcon: ({ color, focused }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={focused ? '#00bbf0' : '#dbd8e3'} />
+          tabBarIcon: ({ focused }) => (
+            <IconSymbol size={30} name="chart.bar.fill" color={focused ? '#00bbf0' : '#dbd8e3'} />
+          ),
+        }}
+      />
+
+      {/* Settings Tab */}
+      <Tabs.Screen
+        name="settings"
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <IconSymbol size={30} name="gear" color={focused ? '#00bbf0' : '#dbd8e3'} />
           ),
         }}
       />
