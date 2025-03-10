@@ -4,6 +4,8 @@ import {
 } from "react-native";
 import * as Location from "expo-location"; // Get user location
 import { BarChart } from "react-native-chart-kit";
+import { RefreshControl } from 'react-native';
+import LottieView from 'lottie-react-native';
 
 const screenWidth = Dimensions.get("window").width - 32;
 
@@ -17,7 +19,19 @@ export default function SummaryReport() {
   const [location, setLocation] = useState(null);
   const [city, setCity] = useState("Fetching location...");
   const [aqiData, setAqiData] = useState(null);
+  const [historicalAQI, setHistoricalAQI] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Function to refresh data
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (location) {
+      await fetchAQIData(location.latitude, location.longitude);
+      await fetchHistoricalAQIData(location.latitude, location.longitude);
+    }
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     (async () => {
@@ -31,16 +45,19 @@ export default function SummaryReport() {
       let userLocation = await Location.getCurrentPositionAsync({});
       setLocation(userLocation.coords);
 
-      // Reverse geocode to get city name
+      // Get city name
       let reverseGeocode = await Location.reverseGeocodeAsync(userLocation.coords);
       if (reverseGeocode.length > 0) {
         setCity(reverseGeocode[0].city || "Unknown Location");
       }
 
-      fetchAQIData(userLocation.coords.latitude, userLocation.coords.longitude);
+      // Fetch both current and historical AQI data
+      await fetchAQIData(userLocation.coords.latitude, userLocation.coords.longitude);
+      await fetchHistoricalAQIData(userLocation.coords.latitude, userLocation.coords.longitude);
     })();
   }, []);
 
+  // Fetch current AQI data
   const fetchAQIData = async (latitude, longitude) => {
     try {
       const response = await fetch(
@@ -68,17 +85,60 @@ export default function SummaryReport() {
     }
   };
 
+  const fetchHistoricalAQIData = async (latitude, longitude) => {
+    try {
+      const response = await fetch(
+        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&hourly=european_aqi&timezone=auto&past_days=7`
+      );
+      const data = await response.json();
+  
+      if (!data.hourly || !data.hourly.european_aqi) {
+        console.warn("No historical AQI data found");
+        setHistoricalAQI([0, 0, 0, 0, 0, 0, 0]);
+        return;
+      }
+  
+      const hourlyAQI = data.hourly.european_aqi;
+  
+      // Split hourly AQI into daily max AQI values
+      let dailyAQI = [];
+      for (let i = 0; i < 7; i++) {
+        const dayStart = i * 24;
+        const dayEnd = dayStart + 24;
+        const dailyMax = Math.max(...hourlyAQI.slice(dayStart, dayEnd));
+        dailyAQI.push(dailyMax);
+      }
+  
+      console.log("📊 Historical AQI Data:", dailyAQI); // 🔍 Debug Log
+  
+      setHistoricalAQI([...dailyAQI]);  // Ensure state update
+    } catch (error) {
+      console.error("Error fetching historical AQI:", error);
+      setHistoricalAQI([0, 0, 0, 0, 0, 0, 0]); // Default fallback
+    }
+  };
+
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
-        <ActivityIndicator size="large" color="#0000ff" />
-      </SafeAreaView>
+      <View className="flex items-center justify-center mt-[400px]">
+        <Text className='font-pmedium text-center mt-2'>Loading...</Text>
+        <LottieView 
+          source={require('../../assets/loadingearth.json')}  
+          autoPlay
+          loop
+          style={{ width: 100, height: 100 }}  
+        />
+      </View>
     );
   }
-
+  
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <ScrollView className="p-4">
+      <ScrollView className="p-4" 
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#16A34A"]} />
+      }
+      >
         {/* Location Title */}
         <View className="flex-row justify-between items-center">
           <Text className="text-xl mt-10 font-bold">{`Air Quality Report for ${city}`}</Text>
@@ -88,6 +148,7 @@ export default function SummaryReport() {
         </View>
 
         {/* Time Range Selector */}
+        {/*
         <View className="flex-row justify-between bg-gray-200 p-2 rounded-lg my-4">
           <TouchableOpacity className="flex-1 py-2 bg-white rounded-lg shadow-md">
             <Text className="text-center font-semibold">Week</Text>
@@ -99,37 +160,52 @@ export default function SummaryReport() {
             <Text className="text-center">Year</Text>
           </TouchableOpacity>
         </View>
+        */}
 
-        {/* Bar Chart (Weekly AQI Data) */}
-        <View className="bg-white p-6 rounded-xl shadow-md mb-4 flex items-center">
-          <Text className="text-lg font-semibold mb-4">Analytics</Text>
+        <View className="bg-white mt-5 p-4 rounded-xl elevation-md mb-4 flex items-center">
+          <Text className="text-lg font-semibold mb-4">Analytics (Last 7 Days AQI)</Text>
           <BarChart
             data={{
-              labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-              datasets: [{ data: [30, 40, 50, 80, 90, 40, 20] }],
+              labels: ["6d", "5d", "4d", "3d", "2d", "Yest", "Today"],
+              datasets: [
+                { data: historicalAQI.length === 7 ? historicalAQI : new Array(7).fill(0) }
+              ],
             }}
             width={screenWidth * 0.9}
-            height={250}
+            height={280} // Increased height for labels
             chartConfig={{
               backgroundColor: "#ffffff",
               backgroundGradientFrom: "#ffffff",
               backgroundGradientTo: "#ffffff",
-              decimalPlaces: 0,
-              color: (opacity = 1, index) => {
-                const aqiValues = [30, 40, 50, 80, 90, 40, 20];
-                return getAQIColor(aqiValues[index]);
+              decimalPlaces: 0, // No decimals
+              color: (opacity, index) => getAQIColor(historicalAQI[index] || 0),
+              labelColor: (opacity) => `rgba(0, 0, 0, ${opacity})`,
+              barPercentage: 0.5,
+              fillShadowGradientOpacity: 1,
+              propsForLabels: {
+                fontSize: 14, // Make y-axis numbers readable
               },
-              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              barPercentage: 0.4,
+              propsForBackgroundLines: {
+                strokeWidth: 1,
+                stroke: "#ddd", // Light gray grid lines
+                strokeDasharray: "4", // Dashed lines
+              },
+              useShadowColorFromDataset: false, // Ensures correct colors
+              formatYLabel: (value) => (value % 20 === 0 ? value : ""), // Only show multiples of 20
             }}
+            showValuesOnTopOfBars={true} // Displays values on top of bars
+            fromZero
+            yAxisLabel=""
+            yAxisSuffix=""
+            yAxisInterval={1} // Ensures regular y-axis intervals
             style={{
               marginVertical: 8,
               borderRadius: 20,
               alignSelf: "center",
               paddingRight: 8,
             }}
-            fromZero
           />
+
         </View>
 
         {/* AQI Summary Cards */}

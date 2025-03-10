@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, Dimensions, ScrollView, SafeAreaView, TouchableOpacity} from 'react-native';
+import { View, Text, FlatList, TextInput, Dimensions, ScrollView, SafeAreaView, TouchableOpacity, Image} from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Animated, { FadeIn, BounceIn, SlideInLeft,Easing,useSharedValue,withRepeat,withTiming,interpolate,
 useAnimatedStyle, } from 'react-native-reanimated';
 import * as Location from 'expo-location';
+import LottieView from 'lottie-react-native';
 import '../../global.css'
 
 export default function HomeScreen() {
@@ -171,11 +172,26 @@ export default function HomeScreen() {
       
       let location = await Location.getCurrentPositionAsync({});
       setCurrentLocation(location.coords);
-      
+    
+      try {
+        // Reverse geocoding to get location name
+        let reverseGeocode = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+    
+        if (reverseGeocode.length > 0) {
+          const locationName = reverseGeocode[0].district || reverseGeocode[0].city || reverseGeocode[0].name;
+          setSearchText(locationName); // Set the search text to display location name
+        }
+      } catch (error) {
+        console.error("Error fetching location name:", error);
+      }
+    
       fetchAQI(location.coords.latitude, location.coords.longitude);
       setIsFetchingLocation(false);
     };
-
+    
     useEffect(() => {
       fetchAllDistrictsAQIData();
       getCurrentLocationAQI();
@@ -205,9 +221,9 @@ export default function HomeScreen() {
     if (aqi <= 50) {
       return { color: 'white', label: 'Good', backgroundColor: '#16A34A' }; // Green for good
     } else if (aqi <= 100) {
-      return { color: 'black', label: 'Moderate', backgroundColor: '#CA8A04' }; // Yellow for moderate
+      return { color: 'black', label: 'Moderate', backgroundColor: 'orange' }; // Yellow for moderate
     } else if (aqi <= 150) {
-      return { color: 'black', label: 'Unhealthy for Sensitive Groups', backgroundColor: '#FF9800' }; // Orange for unhealthy for sensitive groups
+      return { color: 'black', label: 'Unhealthy for Sensitive Groups', backgroundColor: '#CA8A04' }; // Orange for unhealthy for sensitive groups
     } else if (aqi <= 200) {
       return { color: 'black', label: 'Unhealthy', backgroundColor: '#DC2626' }; // Red for unhealthy
     } else if (aqi <= 300) {
@@ -219,7 +235,6 @@ export default function HomeScreen() {
 
   return (
     <ScrollView className="flex-1 bg-gray-100 p-4">
-
       <View className="flex-row items-center justify-between bg-blue-500 mt-8 p-4 rounded-lg shadow-md">
         <Animated.Text entering={BounceIn} className="text-xl font-bold font-pbold text-white">
           Aura
@@ -241,7 +256,14 @@ export default function HomeScreen() {
           value={searchText}
           onChangeText={handleSearch}
         />
-        <View className='absolute top-5 right-5'><FontAwesome5 name="search" size={16} color="lightgray"/> </View>
+        <View className='absolute right-[-20px] top-[-22px]'>
+          <LottieView 
+              source={require('../../assets/search.json')}  
+              autoPlay
+              loop
+              style={{ width: 100, height: 100 }}  
+            /> 
+        </View>
       </Animated.View>
 
       {filteredDistricts.length > 0 && (
@@ -316,25 +338,56 @@ export default function HomeScreen() {
             {searchText} <FontAwesome5 name="map-marker-alt" size={16} color="#ff7272"/>
           </Text>
         </View>
-      
+    
+        <View className='flex-row items-center justify-center ml-6'>
         <Text 
-          className="text-center mt-5 font-pmedium" 
+          className="mt-5 font-pmedium" 
           style={{ color: aqiData.european_aqi <= 100 ? 'black' : 'slategray' }}
         >
-          Air quality is considered {getAQIColor(aqiData.european_aqi).label}
+          Air quality is considered <Text 
+            className="font-bold text-xl" 
+            style={{ color: getAQIColor(aqiData.european_aqi).backgroundColor }}
+          >
+            {getAQIColor(aqiData.european_aqi).label}
+          </Text>
         </Text>
+
+          {aqiData.european_aqi > 50 && (
+          <LottieView 
+            source={require('../../assets/maskearth.json')}  
+            autoPlay
+            loop
+            style={{ width: 100, height: 100 }}  
+          />
+          )}
+           {aqiData.european_aqi <=50 && (
+            <LottieView 
+            source={require('../../assets/happyearth.json')}  
+            autoPlay
+            loop
+            style={{ width: 100, height: 100 }}  
+          />
+          )}
+        </View>
       </View>
-      
       ) : (
         searchText && (
           <Text className="mt-4 text-center text-gray-500 font-pmedium">No AQI data found for "{searchText}"</Text>
         )
       )}
-      <View className="flex-1 mt-2">
+      <View className="flex-1">
             <Text className="mt-5 text-xl text-slate-700 font-psemibold">Top <Text className='text-2xl color-green-600'>AQI</Text> Levels</Text>
             {isLoading ? (
-              <Text className='font-pmedium text-center mt-10'>Loading...</Text>
-            ) : (
+            <View className="flex items-center justify-center mt-10">
+              <Text className='font-pmedium text-center mt-2'>Loading...</Text>
+              <LottieView 
+                source={require('../../assets/loadingearth.json')}  
+                autoPlay
+                loop
+                style={{ width: 100, height: 100 }}  
+              />
+            </View>
+          ) : (
               <FlatList
                 data={districtAQIData}
                 horizontal

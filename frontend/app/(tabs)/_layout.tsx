@@ -1,6 +1,8 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
 export default function TabLayout() {
   return (
@@ -9,7 +11,7 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: 'black',
           position: 'absolute',
-          bottom: 20,
+          bottom: 13,
           marginLeft: '20%',
           marginRight: '20%',
           borderRadius: 40,
@@ -35,7 +37,7 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           tabBarIcon: ({ focused }) => (
-            <IconSymbol size={30} name="chart.bar.fill" color={focused ? '#00bbf0' : '#dbd8e3'} />
+            <Ionicons size={30} name="cellular" color={focused ? '#00bbf0' : '#dbd8e3'} />
           ),
         }}
       />
@@ -46,10 +48,20 @@ export default function TabLayout() {
         options={{
           headerShown: false,
           tabBarIcon: ({ focused }) => (
+            <FontAwesome5 size={28} name="virus" color={focused ? '#1ac72e' : '#dbd8e3'} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="about"
+        options={{
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
             <IconSymbol size={30} name="gear" color={focused ? '#00bbf0' : '#dbd8e3'} />
           ),
         }}
       />
     </Tabs>
+    
   );
 }
