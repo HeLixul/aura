@@ -66,7 +66,7 @@ const Settings = () => {
     console.log(`Fetching data for: ${cityName} (Lat: ${lat}, Lon: ${lon})`); // Debugging log
     setLoading(true);
     try {
-      const response = await fetch(`http://10.1.216.68:5000/predict?lat=${lat}&lon=${lon}`);
+      const response = await fetch(`http://your-ip:5000/predict?lat=${lat}&lon=${lon}`);
       const data = await response.json();
       console.log("API Response:", data); // Log API response
   
