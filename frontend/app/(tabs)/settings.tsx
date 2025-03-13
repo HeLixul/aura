@@ -50,7 +50,9 @@ const tamilNaduDistricts = [
 const Settings = () => {
 
   const router = useRouter();
-
+  const [locationLat, setLocationLat] = useState(11.0168);  // Default: Coimbatore
+  const [locationLon, setLocationLon] = useState(76.9558);
+  
   const [healthScore, setHealthScore] = useState(null);
   const [healthClass, setHealthClass] = useState('');
   const [loading, setLoading] = useState(true);
@@ -63,20 +65,21 @@ const Settings = () => {
   }, []);
 
   const fetchHealthData = async (lat, lon, cityName = "Coimbatore") => {
-    console.log(`Fetching data for: ${cityName} (Lat: ${lat}, Lon: ${lon})`); // Debugging log
+    console.log(`Fetching data for: ${cityName} (Lat: ${lat}, Lon: ${lon})`);
     setLoading(true);
+  
     try {
-      const response = await fetch(`http://your-ip:5000/predict?lat=${lat}&lon=${lon}`);
+      const response = await fetch(`http://your-ip/predict?lat=${lat}&lon=${lon}`);
       const data = await response.json();
-      console.log("API Response:", data); // Log API response
   
       if (data.PredictedHealthImpactScore !== undefined) {
         setHealthScore(data.PredictedHealthImpactScore);
         setHealthClass(classifyHealthImpact(data.PredictedHealthImpactScore));
         setLocationName(cityName);
+        setLocationLat(lat);  // Update state
+        setLocationLon(lon);
       } else {
-        console.error("Invalid data format received:", data);
-        Alert.alert("Error", "Failed to fetch valid data for this location.");
+        Alert.alert("Error", "Failed to fetch valid data.");
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -85,6 +88,7 @@ const Settings = () => {
       setLoading(false);
     }
   };
+  
   
   const classifyHealthImpact = (score) => {
     if (score >= 80) return "Very High";
@@ -224,7 +228,10 @@ const Settings = () => {
         </View>
 
           {/* Buttons */}
-          <TouchableOpacity className="w-full mt-4 bg-gray-800 py-3 rounded-lg flex items-center justify-center elevation-sm"  onPress={() => router.push("/settings/potentialrisks")}>
+          <TouchableOpacity 
+            className="w-full mt-4 bg-gray-800 py-3 rounded-lg flex items-center justify-center elevation-sm"  
+            onPress={() => router.push({ pathname: "/settings/potentialrisks", params: { lat: locationLat, lon: locationLon,place: locationName } })}
+          >
             <Text className="text-white text-lg font-psemibold">Potential Risks</Text>
           </TouchableOpacity>
 
